@@ -1,6 +1,6 @@
-import axios from 'axios';
 import { Request, Router } from 'express';
-import env from '../../config';
+
+import ogs from 'open-graph-scraper';
 
 const router = Router();
 
@@ -14,17 +14,12 @@ router.get('/', async (req: Request<{ url?: string }>, res) => {
   }
 
   try {
-    const { data } = await axios.get(
-      `https://opengraph.io/api/1.1/site/${url}/?app_id=${env.OPEN_GRAPH_IO_ID}`
-    );
+    const { error, result } = await ogs({ url });
+    if (error) throw error;
 
-    const { openGraph, htmlInferred } = data;
-    const meta = {
-      title: openGraph?.title ?? htmlInferred?.title,
-      description: openGraph?.description ?? htmlInferred?.description,
-      image: openGraph?.image?.url ?? htmlInferred?.image,
-    };
+    const { ogTitle: title, ogDescription: description, ogImage: image } = result;
 
+    const meta = { title, description, image: image };
     res.status(200).json(meta);
   } catch (e) {
     res.status(500).send({ message: e.message });
